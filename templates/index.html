@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LocalHub - نظام الإدارة المحلي</title>
+    
+    <!-- Pico.css للتصميم -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    
+    <!-- Alpine.js للتفاعلية -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --primary-hover: #7c3aed;
+            --primary-focus: rgba(139, 92, 246, 0.125);
+        }
+        
+        body {
+            padding-bottom: 80px;
+            background-color: #1a1a1a;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        
+        header {
+            text-align: center;
+            padding: 2rem 0;
+            border-bottom: 2px solid var(--primary);
+            margin-bottom: 2rem;
+        }
+        
+        header h1 {
+            color: var(--primary);
+            margin: 0;
+            font-size: 2.5rem;
+        }
+        
+        header p {
+            color: #888;
+            margin: 0.5rem 0 0 0;
+        }
+        
+        .section {
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        .section.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* الشريط السفلي الثابت */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #2a2a2a;
+            border-top: 2px solid var(--primary);
+            padding: 0.5rem;
+            display: flex;
+            justify-content: space-around;
+            gap: 0.5rem;
+            z-index: 1000;
+        }
+        
+        .bottom-nav button {
+            flex: 1;
+            margin: 0;
+            background: var(--primary);
+            border: none;
+            padding: 0.75rem 0.5rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .bottom-nav button:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+        
+        .bottom-nav button.active {
+            background: var(--primary-hover);
+            box-shadow: 0 0 10px var(--primary);
+        }
+        
+        /* بطاقات المهام */
+        .task-card {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            transition: all 0.2s;
+        }
+        
+        .task-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px var(--primary-focus);
+        }
+        
+        .task-card.completed {
+            opacity: 0.6;
+            text-decoration: line-through;
+        }
+        
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .task-title {
+            font-weight: bold;
+            color: var(--primary);
+            margin: 0;
+        }
+        
+        .task-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .task-actions button {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.85rem;
+            margin: 0;
+        }
+        
+        /* قائمة الملفات */
+        .file-item {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+        
+        .file-item:hover {
+            border-color: var(--primary);
+        }
+        
+        .file-info {
+            flex: 1;
+        }
+        
+        .file-name {
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 0.25rem;
+        }
+        
+        .file-meta {
+            font-size: 0.85rem;
+            color: #888;
+        }
+        
+        .file-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .file-actions button {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            margin: 0;
+        }
+        
+        /* السجلات */
+        .log-container {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 1rem;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.85rem;
+            direction: ltr;
+            text-align: left;
+        }
+        
+        .log-line {
+            margin-bottom: 0.25rem;
+            color: #aaa;
+        }
+        
+        .log-line.info {
+            color: #4ade80;
+        }
+        
+        .log-line.error {
+            color: #f87171;
+        }
+        
+        /* رسائل الحالة */
+        .status-message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .status-message.success {
+            background: rgba(74, 222, 128, 0.1);
+            border: 1px solid #4ade80;
+            color: #4ade80;
+        }
+        
+        .status-message.error {
+            background: rgba(248, 113, 113, 0.1);
+            border: 1px solid #f87171;
+            color: #f87171;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        /* تحسينات النماذج */
+        input[type="file"] {
+            cursor: pointer;
+        }
+        
+        button[type="submit"] {
+            background: var(--primary);
+        }
+        
+        button[type="submit"]:hover {
+            background: var(--primary-hover);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #666;
+        }
+        
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body x-data="app()" x-init="init()">
+    
+    <!-- الرأس -->
+    <header>
+        <h1>🔒 LocalHub</h1>
+        <p>نظام الإدارة المحلي الآمن والمشفر</p>
+    </header>
+    
+    <div class="container">
+        
+        <!-- قسم الملفات -->
+        <section id="files-section" class="section" :class="{ 'active': currentSection === 'files' }">
+            <h2>📁 الملفات المشفرة</h2>
+            
+            <!-- رسالة الحالة -->
+            <div x-show="fileStatus.message" 
+                 x-transition
+                 class="status-message" 
+                 :class="fileStatus.type">
+                <span x-text="fileStatus.message"></span>
+            </div>
+            
+            <!-- نموذج رفع الملفات -->
+            <article>
+                <h3>رفع ملف جديد</h3>
+                <form @submit.prevent="uploadFile">
+                    <input type="file" 
+                           x-ref="fileInput" 
+                           required 
+                           accept="*/*">
+                    <button type="submit" :disabled="uploading">
+                        <span x-show="!uploading">📤 رفع الملف</span>
+                        <span x-show="uploading">جاري الرفع...</span>
+                    </button>
+                </form>
+            </article>
+            
+            <!-- قائمة الملفات -->
+            <article>
+                <h3>الملفات المحفوظة</h3>
+                <template x-if="files.length === 0">
+                    <div class="empty-state">
+                        <p>📭 لا توجد ملفات محفوظة</p>
+                    </div>
+                </template>
+                
+                <template x-for="file in files" :key="file.internal_name">
+                    <div class="file-item">
+                        <div class="file-info">
+                            <div class="file-name" x-text="file.name"></div>
+                            <div class="file-meta">
+                                <span x-text="formatFileSize(file.size)"></span> • 
+                                <span x-text="formatDate(file.uploaded_at)"></span>
+                            </div>
+                        </div>
+                        <div class="file-actions">
+                            <button @click="downloadFile(file.name)">⬇️ تحميل</button>
+                            <button @click="deleteFile(file.name)" class="secondary">🗑️ حذف</button>
+                        </div>
+                    </div>
+                </template>
+            </article>
+        </section>
+        
+        <!-- قسم المهام -->
+        <section id="tasks-section" class="section" :class="{ 'active': currentSection === 'tasks' }">
+            <h2>✅ مهامي</h2>
+            
+            <!-- رسالة الحالة -->
+            <div x-show="taskStatus.message" 
+                 x-transition
+                 class="status-message" 
+                 :class="taskStatus.type">
+                <span x-text="taskStatus.message"></span>
+            </div>
+            
+            <!-- نموذج إضافة مهمة -->
+            <article>
+                <h3>إضافة مهمة جديدة</h3>
+                <form @submit.prevent="addTask">
+                    <input type="text" 
+                           x-model="newTask.title" 
+                           placeholder="عنوان المهمة" 
+                           required>
+                    <textarea x-model="newTask.description" 
+                              placeholder="تفاصيل المهمة (اختياري)" 
+                              rows="3"></textarea>
+                    <input type="date" 
+                           x-model="newTask.due_date" 
+                           placeholder="تاريخ الاستحقاق (اختياري)">
+                    <button type="submit">➕ إضافة المهمة</button>
+                </form>
+            </article>
+            
+            <!-- قائمة المهام -->
+            <article>
+                <h3>المهام الحالية</h3>
+                <template x-if="tasks.length === 0">
+                    <div class="empty-state">
+                        <p>✨ لا توجد مهام حاليًا</p>
+                    </div>
+                </template>
+                
+                <template x-for="task in tasks" :key="task.id">
+                    <div class="task-card" :class="{ 'completed': task.completed }">
+                        <div class="task-header">
+                            <h4 class="task-title" x-text="task.title"></h4>
+                            <div class="task-actions">
+                                <button @click="toggleTask(task)" 
+                                        :class="task.completed ? 'secondary' : ''">
+                                    <span x-show="!task.completed">✓</span>
+                                    <span x-show="task.completed">↺</span>
+                                </button>
+                                <button @click="deleteTask(task.id)" class="secondary">🗑️</button>
+                            </div>
+                        </div>
+                        <p x-show="task.description" x-text="task.description" style="margin: 0.5rem 0; color: #aaa;"></p>
+                        <small x-show="task.due_date" style="color: #888;">
+                            📅 الاستحقاق: <span x-text="formatDate(task.due_date)"></span>
+                        </small>
+                    </div>
+                </template>
+            </article>
+        </section>
+        
+        <!-- قسم السجلات -->
+        <section id="logs-section" class="section" :class="{ 'active': currentSection === 'logs' }">
+            <h2>📜 سجل النشاطات</h2>
+            
+            <article>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3>السجلات الأخيرة</h3>
+                    <button @click="loadLogs" class="secondary">🔄 تحديث</button>
+                </div>
+                
+                <div class="log-container">
+                    <template x-if="logs.length === 0">
+                        <div class="empty-state">
+                            <p>📝 لا توجد سجلات</p>
+                        </div>
+                    </template>
+                    
+                    <template x-for="log in logs" :key="log">
+                        <div class="log-line" 
+                             :class="{ 'info': log.includes('INFO'), 'error': log.includes('ERROR') }"
+                             x-text="log"></div>
+                    </template>
+                </div>
+            </article>
+        </section>
+        
+        <!-- قسم الإعدادات -->
+        <section id="settings-section" class="section" :class="{ 'active': currentSection === 'settings' }">
+            <h2>⚙️ الإعدادات</h2>
+            
+            <!-- رسالة الحالة -->
+            <div x-show="settingsStatus.message" 
+                 x-transition
+                 class="status-message" 
+                 :class="settingsStatus.type">
+                <span x-text="settingsStatus.message"></span>
+            </div>
+            
+            <!-- النسخ الاحتياطي -->
+            <article>
+                <h3>💾 النسخ الاحتياطي</h3>
+                <p>قم بإنشاء نسخة احتياطية مضغوطة من جميع ملفاتك ومهامك.</p>
+                <button @click="createBackup" :disabled="backingUp">
+                    <span x-show="!backingUp">📦 إنشاء نسخة احتياطية</span>
+                    <span x-show="backingUp">جاري الإنشاء...</span>
+                </button>
+            </article>
+            
+            <!-- معلومات النظام -->
+            <article>
+                <h3>ℹ️ معلومات النظام</h3>
+                <table>
+                    <tbody>
+                        <tr>
+                            <td><strong>اسم النظام</strong></td>
+                            <td>LocalHub v1.0</td>
+                        </tr>
+                        <tr>
+                            <td><strong>التشفير</strong></td>
+                            <td>✅ مفعّل (Fernet)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>الوضع</strong></td>
+                            <td>🔒 محلي فقط (127.0.0.1)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>عدد الملفات</strong></td>
+                            <td><span x-text="files.length"></span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>عدد المهام</strong></td>
+                            <td><span x-text="tasks.length"></span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </article>
+            
+            <!-- حول -->
+            <article>
+                <h3>📖 حول LocalHub</h3>
+                <p>
+                    LocalHub هو نظام إدارة محلي آمن ومشفر، مصمم للعمل بشكل مستقل على جهازك دون الحاجة للإنترنت.
+                    جميع ملفاتك محمية بتشفير قوي، ولا يمكن الوصول إليها إلا من خلال هذا التطبيق.
+                </p>
+                <p style="color: #888; font-size: 0.9rem;">
+                    تم البناء بواسطة: المهندس الكياني المستقل<br>
+                    التقنيات: Flask + Alpine.js + Pico.css + Cryptography
+                </p>
+            </article>
+        </section>
+        
+    </div>
+    
+    <!-- الشريط السفلي الثابت -->
+    <nav class="bottom-nav">
+        <button @click="switchSection('files')" 
+                :class="{ 'active': currentSection === 'files' }">
+            📁 الملفات
+        </button>
+        <button @click="switchSection('tasks')" 
+                :class="{ 'active': currentSection === 'tasks' }">
+            ✅ المهام
+        </button>
+        <button @click="switchSection('logs')" 
+                :class="{ 'active': currentSection === 'logs' }">
+            📜 السجلات
+        </button>
+        <button @click="switchSection('settings')" 
+                :class="{ 'active': currentSection === 'settings' }">
+            ⚙️ الإعدادات
+        </button>
+    </nav>
+    
+    <script>
+        function app() {
+            return {
+                // الحالة العامة
+                currentSection: 'files',
+                
+                // الملفات
+                files: [],
+                uploading: false,
+                fileStatus: { message: '', type: '' },
+                
+                // المهام
+                tasks: [],
+                newTask: { title: '', description: '', due_date: '' },
+                taskStatus: { message: '', type: '' },
+                
+                // السجلات
+                logs: [],
+                
+                // الإعدادات
+                backingUp: false,
+                settingsStatus: { message: '', type: '' },
+                
+                // التهيئة
+                init() {
+                    this.loadFiles();
+                    this.loadTasks();
+                    this.loadLogs();
+                },
+                
+                // التنقل بين الأقسام
+                switchSection(section) {
+                    this.currentSection = section;
+                    
+                    // تحديث البيانات عند التبديل
+                    if (section === 'files') this.loadFiles();
+                    if (section === 'tasks') this.loadTasks();
+                    if (section === 'logs') this.loadLogs();
+                },
+                
+                // ===== إدارة الملفات =====
+                async loadFiles() {
+                    try {
+                        const response = await fetch('/files');
+                        this.files = await response.json();
+                    } catch (error) {
+                        console.error('خطأ في تحميل الملفات:', error);
+                    }
+                },
+                
+                async uploadFile() {
+                    const fileInput = this.$refs.fileInput;
+                    if (!fileInput.files[0]) return;
+                    
+                    this.uploading = true;
+                    this.fileStatus = { message: '', type: '' };
+                    
+                    const formData = new FormData();
+                    formData.append('file', fileInput.files[0]);
+                    
+                    try {
+                        const response = await fetch('/upload', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (response.ok) {
+                            this.fileStatus = { 
+                                message: '✅ تم رفع الملف وتشفيره بنجاح', 
+                                type: 'success' 
+                            };
+                            fileInput.value = '';
+                            await this.loadFiles();
+                        } else {
+                            this.fileStatus = { 
+                                message: '❌ ' + data.error, 
+                                type: 'error' 
+                            };
+                        }
+                    } catch (error) {
+                        this.fileStatus = { 
+                            message: '❌ فشل في رفع الملف', 
+                            type: 'error' 
+                        };
+                    } finally {
+                        this.uploading = false;
+                        setTimeout(() => this.fileStatus = { message: '', type: '' }, 3000);
+                    }
+                },
+                
+                async downloadFile(filename) {
+                    try {
+                        window.location.href = `/download/${encodeURIComponent(filename)}`;
+                    } catch (error) {
+                        console.error('خطأ في تحميل الملف:', error);
+                    }
+                },
+                
+                async deleteFile(filename) {
+                    if (!confirm(`هل أنت متأكد من حذف الملف "${filename}"؟`)) return;
+                    
+                    try {
+                        const response = await fetch(`/files/${encodeURIComponent(filename)}`, {
+                            method: 'DELETE'
+                        });
+                        
+                        if (response.ok) {
+                            this.fileStatus = { 
+                                message: '✅ تم حذف الملف', 
+                                type: 'success' 
+                            };
+                            await this.loadFiles();
+                        }
+                    } catch (error) {
+                        this.fileStatus = { 
+                            message: '❌ فشل في حذف الملف', 
+                            type: 'error' 
+                        };
+                    } finally {
+                        setTimeout(() => this.fileStatus = { message: '', type: '' }, 3000);
+                    }
+                },
+                
+                // ===== إدارة المهام =====
+                async loadTasks() {
+                    try {
+                        const response = await fetch('/tasks');
+                        this.tasks = await response.json();
+                    } catch (error) {
+                        console.error('خطأ في تحميل المهام:', error);
+                    }
+                },
+                
+                async addTask() {
+                    if (!this.newTask.title.trim()) return;
+                    
+                    this.taskStatus = { message: '', type: '' };
+                    
+                    try {
+                        const response = await fetch('/tasks', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.newTask)
+                        });
+                        
+                        if (response.ok) {
+                            this.taskStatus = { 
+                                message: '✅ تمت إضافة المهمة', 
+                                type: 'success' 
+                            };
+                            this.newTask = { title: '', description: '', due_date: '' };
+                            await this.loadTasks();
+                        }
+                    } catch (error) {
+                        this.taskStatus = { 
+                            message: '❌ فشل في إضافة المهمة', 
+                            type: 'error' 
+                        };
+                    } finally {
+                        setTimeout(() => this.taskStatus = { message: '', type: '' }, 3000);
+                    }
+                },
+                
+                async toggleTask(task) {
+                    try {
+                        const response = await fetch(`/tasks/${task.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ completed: !task.completed })
+                        });
+                        
+                        if (response.ok) {
+                            await this.loadTasks();
+                        }
+                    } catch (error) {
+                        console.error('خطأ في تحديث المهمة:', error);
+                    }
+                },
+                
+                async deleteTask(taskId) {
+                    if (!confirm('هل أنت متأكد من حذف هذه المهمة؟')) return;
+                    
+                    try {
+                        const response = await fetch(`/tasks/${taskId}`, {
+                            method: 'DELETE'
+                        });
+                        
+                        if (response.ok) {
+                            this.taskStatus = { 
+                                message: '✅ تم حذف المهمة', 
+                                type: 'success' 
+                            };
+                            await this.loadTasks();
+                        }
+                    } catch (error) {
+                        this.taskStatus = { 
+                            message: '❌ فشل في حذف المهمة', 
+                            type: 'error' 
+                        };
+                    } finally {
+                        setTimeout(() => this.taskStatus = { message: '', type: '' }, 3000);
+                    }
+                },
+                
+                // ===== السجلات =====
+                async loadLogs() {
+                    try {
+                        const response = await fetch('/logs');
+                        const data = await response.json();
+                        this.logs = data.logs || [];
+                    } catch (error) {
+                        console.error('خطأ في تحميل السجلات:', error);
+                    }
+                },
+                
+                // ===== الإعدادات =====
+                async createBackup() {
+                    this.backingUp = true;
+                    this.settingsStatus = { message: '', type: '' };
+                    
+                    try {
+                        const response = await fetch('/backup', {
+                            method: 'POST'
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (response.ok) {
+                            this.settingsStatus = { 
+                                message: `✅ تم إنشاء النسخة الاحتياطية: ${data.filename}`, 
+                                type: 'success' 
+                            };
+                        } else {
+                            this.settingsStatus = { 
+                                message: '❌ ' + data.error, 
+                                type: 'error' 
+                            };
+                        }
+                    } catch (error) {
+                        this.settingsStatus = { 
+                            message: '❌ فشل في إنشاء النسخة الاحتياطية', 
+                            type: 'error' 
+                        };
+                    } finally {
+                        this.backingUp = false;
+                        setTimeout(() => this.settingsStatus = { message: '', type: '' }, 5000);
+                    }
+                },
+                
+                // ===== دوال مساعدة =====
+                formatFileSize(bytes) {
+                    if (bytes < 1024) return bytes + ' B';
+                    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+                    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+                },
+                
+                formatDate(dateString) {
+                    if (!dateString) return '';
+                    const date = new Date(dateString);
+                    return date.toLocaleDateString('ar-EG', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                    });
+                }
+            }
+        }
+    </script>
+</body>
+</html>

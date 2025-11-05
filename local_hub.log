@@ -1,0 +1,7 @@
+2025-11-04 13:12:13,610 - INFO - تم إنشاء مفتاح تشفير جديد
+2025-11-04 13:12:13,614 - INFO - ==================================================
+2025-11-04 13:12:13,614 - INFO - بدء تشغيل LocalHub
+2025-11-04 13:12:13,614 - INFO - ==================================================
+2025-11-04 13:12:13,618 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-11-04 13:12:13,618 - INFO - [33mPress CTRL+C to quit[0m
